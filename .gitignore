@@ -1,0 +1,5 @@
+venv/
+__pycache__/
+*.pyc
+data/weekly_buy_scan_*.csv
+.pytest_cache/

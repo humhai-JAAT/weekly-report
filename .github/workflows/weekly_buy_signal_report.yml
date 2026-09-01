@@ -1,0 +1,40 @@
+name: Weekly Buy Signal WhatsApp Report
+
+# Scans the Nifty 500 universe on the WEEKLY timeframe (weekly_buy_scan.py,
+# using this repo's own strategy.py — a snapshot of unified-trading-engine's
+# entry logic), builds a PDF of the genuinely fresh buy signals, and sends it
+# to one WhatsApp number via the Meta WhatsApp Business Cloud API
+# (weekly_whatsapp_report.py). Runs after the weekly candle closes (Friday
+# NSE close 15:30 IST) with a buffer for yfinance's daily feed to settle.
+#
+# Requires these repo secrets (Settings -> Secrets and variables -> Actions):
+#   WHATSAPP_TOKEN            - Meta permanent access token (System User token)
+#   WHATSAPP_PHONE_NUMBER_ID  - the sending number's Phone Number ID
+#   WHATSAPP_RECIPIENT_NUMBER - recipient in international format, no '+' (e.g. 91XXXXXXXXXX)
+#   WHATSAPP_TEMPLATE_NAME    - name of the approved template (DOCUMENT header + 2 body text params)
+on:
+  schedule:
+    # 12:30 UTC = 18:00 IST, every Friday
+    - cron: '30 12 * * 5'
+  workflow_dispatch:
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run weekly scan and send WhatsApp report
+        run: python weekly_whatsapp_report.py
+        env:
+          WHATSAPP_TOKEN: ${{ secrets.WHATSAPP_TOKEN }}
+          WHATSAPP_PHONE_NUMBER_ID: ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+          WHATSAPP_RECIPIENT_NUMBER: ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
+          WHATSAPP_TEMPLATE_NAME: ${{ secrets.WHATSAPP_TEMPLATE_NAME }}
