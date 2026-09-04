@@ -127,7 +127,10 @@ def send_whatsapp_document(token: str, phone_number_id: str, recipient: str, tem
         "type": "template",
         "template": {
             "name": template_name,
-            "language": {"code": "en_US"},
+            # Meta's error "(#132001) template name does not exist in the
+            # translation" for en_US, 2026-09-04 - the template was actually
+            # created under plain "English" (code "en"), not "English (US)".
+            "language": {"code": "en"},
             "components": [
                 {
                     "type": "header",
