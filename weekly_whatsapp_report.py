@@ -57,6 +57,18 @@ def debug_list_templates(token: str, name: str) -> None:
         )
         print(f"Template lookup for '{name}': status={resp.status_code}")
         print(resp.text)
+
+        # The filtered lookup above came back empty (2026-09-04) - list
+        # EVERY template on this WABA, unfiltered, to see what's actually
+        # there (wrong name? wrong WABA ID entirely?).
+        resp_all = requests.get(
+            f"{GRAPH_API_BASE}/{WHATSAPP_BUSINESS_ACCOUNT_ID}/message_templates",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"fields": "name,status,language", "limit": 50},
+            timeout=30,
+        )
+        print(f"ALL templates on WABA {WHATSAPP_BUSINESS_ACCOUNT_ID}: status={resp_all.status_code}")
+        print(resp_all.text)
     except Exception as e:
         print(f"Template lookup failed: {e}")
 
