@@ -153,10 +153,18 @@ def send_whatsapp_document(token: str, phone_number_id: str, recipient: str, tem
 
 
 def main() -> None:
-    token = os.environ["WHATSAPP_TOKEN"]
-    phone_number_id = os.environ["WHATSAPP_PHONE_NUMBER_ID"]
-    recipient = os.environ["WHATSAPP_RECIPIENT_NUMBER"]
-    template_name = os.environ["WHATSAPP_TEMPLATE_NAME"]
+    # .strip() on every secret: GitHub Actions' own env dump showed a blank
+    # line right after WHATSAPP_TOKEN's redacted value, meaning the secret
+    # itself carries an embedded newline no matter how it was copied
+    # (Meta's own token-copy UI appears to append one) - this caused
+    # `requests` to reject the Authorization header as malformed
+    # (InvalidHeader) before the request even left the machine. Stripping
+    # here makes the script robust to that regardless of how any of these
+    # 4 secrets get pasted in the future.
+    token = os.environ["WHATSAPP_TOKEN"].strip()
+    phone_number_id = os.environ["WHATSAPP_PHONE_NUMBER_ID"].strip()
+    recipient = os.environ["WHATSAPP_RECIPIENT_NUMBER"].strip()
+    template_name = os.environ["WHATSAPP_TEMPLATE_NAME"].strip()
 
     result = scan()
     fresh, _repeats = split_hits(result)
