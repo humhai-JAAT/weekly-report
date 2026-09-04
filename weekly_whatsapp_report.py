@@ -152,19 +152,22 @@ def send_whatsapp_document(token: str, phone_number_id: str, recipient: str, tem
     return resp.json()
 
 
+def _clean_secret(value: str) -> str:
+    """Removes ALL whitespace (not just leading/trailing - `.strip()` alone
+    isn't enough here) from a secret value. Confirmed live 2026-09-04: the
+    WHATSAPP_TOKEN Meta hands out carries a literal newline EMBEDDED in the
+    middle of the string (right after a '-' character, before the final
+    segment) no matter how it's copied - Meta's own token-copy UI appears to
+    insert it. `requests` rejected the resulting Authorization header as
+    malformed (InvalidHeader) before the request even left the machine."""
+    return "".join(value.split())
+
+
 def main() -> None:
-    # .strip() on every secret: GitHub Actions' own env dump showed a blank
-    # line right after WHATSAPP_TOKEN's redacted value, meaning the secret
-    # itself carries an embedded newline no matter how it was copied
-    # (Meta's own token-copy UI appears to append one) - this caused
-    # `requests` to reject the Authorization header as malformed
-    # (InvalidHeader) before the request even left the machine. Stripping
-    # here makes the script robust to that regardless of how any of these
-    # 4 secrets get pasted in the future.
-    token = os.environ["WHATSAPP_TOKEN"].strip()
-    phone_number_id = os.environ["WHATSAPP_PHONE_NUMBER_ID"].strip()
-    recipient = os.environ["WHATSAPP_RECIPIENT_NUMBER"].strip()
-    template_name = os.environ["WHATSAPP_TEMPLATE_NAME"].strip()
+    token = _clean_secret(os.environ["WHATSAPP_TOKEN"])
+    phone_number_id = _clean_secret(os.environ["WHATSAPP_PHONE_NUMBER_ID"])
+    recipient = _clean_secret(os.environ["WHATSAPP_RECIPIENT_NUMBER"])
+    template_name = _clean_secret(os.environ["WHATSAPP_TEMPLATE_NAME"])
 
     result = scan()
     fresh, _repeats = split_hits(result)
