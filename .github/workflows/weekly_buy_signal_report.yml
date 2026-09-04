@@ -7,7 +7,10 @@ name: Weekly Buy Signal WhatsApp Report
 # (weekly_whatsapp_report.py). Runs after the weekly candle closes (Friday
 # NSE close 15:30 IST) with a buffer for yfinance's daily feed to settle.
 #
-# Requires these repo secrets (Settings -> Secrets and variables -> Actions):
+# Requires these 4 secrets under the "anpi" GitHub Environment (Settings ->
+# Environments -> anpi -> Environment secrets) -- that's where they ended up
+# getting added (2026-09-04), so the job below targets that environment
+# rather than plain repo-level secrets:
 #   WHATSAPP_TOKEN            - Meta permanent access token (System User token)
 #   WHATSAPP_PHONE_NUMBER_ID  - the sending number's Phone Number ID
 #   WHATSAPP_RECIPIENT_NUMBER - recipient in international format, no '+' (e.g. 91XXXXXXXXXX)
@@ -21,6 +24,7 @@ on:
 jobs:
   report:
     runs-on: ubuntu-latest
+    environment: anpi
     steps:
       - uses: actions/checkout@v4
 
