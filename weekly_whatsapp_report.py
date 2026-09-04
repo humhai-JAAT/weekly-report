@@ -82,6 +82,24 @@ def build_pdf(fresh: pd.DataFrame, scan_date: str) -> bytes:
     return buf.getvalue()
 
 
+def _raise_with_meta_detail(resp: requests.Response) -> None:
+    """`resp.raise_for_status()` alone only gives a bare '401 Client Error:
+    Unauthorized' with no explanation — Meta's own error body (which has a
+    real message/type/code explaining WHY, e.g. an expired token vs a
+    permission the System User doesn't have) gets silently discarded.
+    Live-hit 2026-09-04: two straight 401s with zero detail made it
+    impossible to tell whether the problem was the token itself or
+    something else (app assignment, phone number mismatch) without this."""
+    try:
+        resp.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        try:
+            detail = resp.json()
+        except Exception:
+            detail = resp.text[:500]
+        raise requests.exceptions.HTTPError(f"{e} | body: {detail}", response=resp) from None
+
+
 def upload_media(token: str, phone_number_id: str, pdf_bytes: bytes, filename: str) -> str:
     """Uploads the PDF to Meta's Media API, returns the media_id used to
     reference it in the template send call below — avoids needing a
@@ -93,7 +111,7 @@ def upload_media(token: str, phone_number_id: str, pdf_bytes: bytes, filename: s
         files={"file": (filename, pdf_bytes, "application/pdf")},
         timeout=30,
     )
-    resp.raise_for_status()
+    _raise_with_meta_detail(resp)
     return resp.json()["id"]
 
 
@@ -130,7 +148,7 @@ def send_whatsapp_document(token: str, phone_number_id: str, recipient: str, tem
         headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
         json=payload, timeout=30,
     )
-    resp.raise_for_status()
+    _raise_with_meta_detail(resp)
     return resp.json()
 
 
