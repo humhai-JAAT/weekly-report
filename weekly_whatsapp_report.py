@@ -36,6 +36,30 @@ from weekly_buy_scan import scan, split_hits
 GRAPH_API_VERSION = "v20.0"
 GRAPH_API_BASE = f"https://graph.facebook.com/{GRAPH_API_VERSION}"
 
+# Not a secret - a business account ID is just an identifier, useless
+# without the access token. Seen directly in the Meta UI (WhatsApp -> API
+# Setup) when this project's app was set up.
+WHATSAPP_BUSINESS_ACCOUNT_ID = "1061463679695049"
+
+
+def debug_list_templates(token: str, name: str) -> None:
+    """Prints every template matching `name` with its real approval status
+    and language code, straight from Meta - guessing the language code from
+    the WhatsApp Manager UI's friendly label ("English") got "en" AND
+    "en_US" both rejected with (#132001) on 2026-09-04, so this looks it up
+    directly instead of guessing again."""
+    try:
+        resp = requests.get(
+            f"{GRAPH_API_BASE}/{WHATSAPP_BUSINESS_ACCOUNT_ID}/message_templates",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"name": name, "fields": "name,status,language,category,components"},
+            timeout=30,
+        )
+        print(f"Template lookup for '{name}': status={resp.status_code}")
+        print(resp.text)
+    except Exception as e:
+        print(f"Template lookup failed: {e}")
+
 
 def build_pdf(fresh: pd.DataFrame, scan_date: str) -> bytes:
     """Renders the fresh-signal list as a one-page PDF, in-memory (no temp
@@ -171,6 +195,8 @@ def main() -> None:
     phone_number_id = _clean_secret(os.environ["WHATSAPP_PHONE_NUMBER_ID"])
     recipient = _clean_secret(os.environ["WHATSAPP_RECIPIENT_NUMBER"])
     template_name = _clean_secret(os.environ["WHATSAPP_TEMPLATE_NAME"])
+
+    debug_list_templates(token, template_name)
 
     result = scan()
     fresh, _repeats = split_hits(result)
