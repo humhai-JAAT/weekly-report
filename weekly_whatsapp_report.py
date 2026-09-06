@@ -214,6 +214,19 @@ def main() -> None:
     fresh, _repeats = split_hits(result)
     scan_date = pd.Timestamp.now().strftime("%Y-%m-%d")
 
+    # Explicit visibility into WHAT this run actually decided, and how much
+    # of the universe it could even evaluate - without this, a run-to-run
+    # difference in the fresh count (e.g. 7 vs 1) is impossible to diagnose
+    # after the fact, since neither the symbol list nor the fetch failures
+    # were ever printed before 2026-09-06.
+    no_data = int((result["reason"] == "no_data").sum())
+    insufficient = int((result["reason"] == "insufficient_history").sum())
+    print(f"Universe coverage: {len(result)} total, {no_data} no_data, "
+          f"{insufficient} insufficient_history")
+    if not fresh.empty:
+        print(f"Fresh signal week: {fresh['buy_signal_date'].iloc[0]}")
+    print(f"Fresh stocks ({len(fresh)}): {fresh['symbol'].tolist()}")
+
     pdf_bytes = build_pdf(fresh, scan_date)
     filename = f"weekly_buy_signals_{scan_date}.pdf"
 
